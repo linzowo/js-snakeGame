@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>贪吃蛇</title>
+
+    <style>
+      .map {
+        width: 800px;
+        height: 600px;
+        left: 100px;
+        top: 10px;
+        background-color: #ccc;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 创建地图及样式 -->
+    <div class="map"></div>
+
+    <script>
+      // 食物对象==================================
+      (function() {
+        var elements = []; //用来存储随机产生的食物元素。方便后续将其删除
+        // 创建食物对象的构造函数
+        function Food(width, height, color) {
+          // 基本属性
+          this.width = width || 20;
+          this.height = height || 20;
+          this.color = color || "green";
+          // 坐标
+          this.x = 0;
+          this.y = 0;
+        }
+
+        // 添加原型方法
+        // 初始化,将food对象添加到地图上并设置其样式
+        Food.prototype.init = function(map) {
+          remove();
+          var div = document.createElement("div");
+          map.appendChild(div); //将元素添加到地图上
+          // 设置基础样式
+          div.style.width = this.width + "px";
+          div.style.height = this.height + "px";
+          div.style.backgroundColor = this.color;
+          // 为了方便设置位置使其脱标
+          div.style.position = "absolute";
+          // 设置其横纵坐标
+          this.x =
+            parseInt(Math.random() * (map.offsetWidth / this.width)) *
+            this.width;
+          this.y =
+            parseInt(Math.random() * (map.offsetHeight / this.height)) *
+            this.height;
+          div.style.left = this.x + "px";
+          div.style.top = this.y + "px";
+          // 将div添加到数组中方便后续删除其时使用
+          elements.push(div);
+        };
+
+        // 创建私有函数===删除随机产生的食物
+        function remove() {
+          for (var i = 0; i < elements.length; i++) {
+            var ele = elements[i];
+            // 找到该元素的父级元素，然后通过父级元素删除该元素
+            ele.parentNode.removeChild(ele);
+            elements.splice(i, 1); //将数组中的元素都删除；
+          }
+        }
+
+        // 将食物对象暴露给window方便外部调用
+        window.Food = new Food();
+      })();
+
+      // 蛇对象=====================================
+      (function() {
+        var elements = [];
+        // snake构造函数
+        function Snake() {
+          this.width = 20;
+          this.height = 20;
+          this.body = [
+            { x: 3, y: 2, color: "red" },
+            { x: 2, y: 2, color: "yellow" },
+            { x: 1, y: 2, color: "yellow" }
+          ];
+          this.direction = "right";
+        }
+
+        // 为snake对象添加原型方法
+        // 初始化==》将snake添加在地图上并设置相关样式
+        Snake.prototype.init = function(map) {
+          remove(); //删除原来位置的蛇
+          for (var i = 0; i < this.body.length; i++) {
+            var div = document.createElement("div");
+            // 将元素添加到地图上
+            map.appendChild(div);
+            // 设置相关样式
+            div.style.width = this.width + "px";
+            div.style.height = this.height + "px";
+            div.style.position = "absolute";
+
+            // 设置对应坐标及颜色
+            div.style.left = this.body[i].x * this.width + "px";
+            div.style.top = this.body[i].y * this.height + "px";
+            div.style.backgroundColor = this.body[i].color;
+
+            // 将新的div加入的数组中，方便后面删除
+            elements.push(div);
+          }
+        };
+
+        // 蛇移动
+        Snake.prototype.move = function(food, map) {
+          for (var i = this.body.length - 1; i > 0; i--) {
+            this.body[i].x = this.body[i - 1].x;
+            this.body[i].y = this.body[i - 1].y;
+          }
+          // 判断方向
+          switch (this.direction) {
+            case "left":
+              this.body[0].x -= 1;
+              break;
+            case "top":
+              this.body[0].y -= 1;
+              break;
+            case "right":
+              this.body[0].x += 1;
+              break;
+            case "down":
+              this.body[0].y += 1;
+              break;
+          }
+
+          //判断小蛇是否吃到了食物
+          // 获取头部当前坐标
+          var headX = this.body[0].x * this.width;
+          var headY = this.body[0].y * this.height;
+          // 获取当前食物坐标
+          var foodX = food.x;
+          var foodY = food.y;
+
+          if (headX == foodX && headY == foodY) {
+            var last = this.body[this.body.length - 1];
+            // 使蛇的身体边长
+            this.body.push({
+              x: last.x,
+              y: last.y,
+              color: last.color
+            });
+            // 删除当前食物并创建一个心的食物
+            food.init(map);
+          }
+        };
+
+        // 私有函数===删除原来位置的蛇
+        function remove() {
+          for (var i = elements.length - 1; i >= 0; i--) {
+            var ele = elements[i];
+            ele.parentNode.removeChild(ele); //在页面中删除该元素
+            elements.splice(i, 1); //在数组中删除该元素
+          }
+        }
+        // 将snake对象暴露给widow方便外部调用
+        window.Snake = new Snake();
+      })();
+
+      // 游戏对象==============================
+      (function() {
+        // 构造游戏函数
+        function Game(map) {
+          this.food = Food;
+          this.snake = Snake;
+          this.map = map;
+        }
+
+        // 添加方法
+        // 初始化游戏
+        Game.prototype.init = function() {
+          // 初始化食物
+          this.food.init(this.map);
+          // 初始化小蛇
+          this.snake.init(this.map);
+          // 移动小蛇
+          this.runSnake(this.food, this.map);
+          //绑定按键值
+          this.bindKey();
+        };
+
+        // 小蛇持续移动
+        Game.prototype.runSnake = function(food, map) {
+          var that = this;
+          // 小蛇移动
+          var timeid = setInterval(
+            function() {
+              this.snake.move(food, map);
+              this.snake.init(map);
+
+              // 判断小蛇是否撞墙了
+              // 获取最大边界
+              var maxX = map.offsetWidth / this.snake.width;
+              var maxY = map.offsetHeight / this.snake.height;
+              // 获取当前的头部坐标值
+              var headX = this.snake.body[0].x;
+              var headY = this.snake.body[0].y;
+
+              if (headX < 0 || headX >= maxX || headY < 0 || headY >= maxY) {
+                clearInterval(timeid);
+                alert("撞墙了，游戏结束。");
+              }
+            }.bind(that),
+            150
+          );
+        };
+
+        // 获取用户按键值改变小蛇移动
+        Game.prototype.bindKey = function() {
+          var that = this;
+          document.addEventListener(
+            "keydown",
+            function(e) {
+              switch (e.keyCode) {
+                case 37:
+                  this.snake.direction = "left";
+                  break;
+                case 38:
+                  this.snake.direction = "top";
+                  break;
+                case 39:
+                  this.snake.direction = "right";
+                  break;
+                case 40:
+                  this.snake.direction = "down";
+                  break;
+              }
+            }.bind(that),
+            false
+          );
+        };
+
+        // 将game对象暴露给window
+        window.Game = Game;
+      })();
+
+      // 测试
+      var gm = new Game(document.querySelector(".map"));
+      gm.init();
+
+      // var map = document.querySelector(".map");
+      // // 创建食物对象
+      // var fd = Food;
+      // fd.init(map);
+      // setInterval(function() {
+      //   fd.init(map);
+      // }, 500);
+      //   创建蛇对象
+      // var snake = Snake;
+      // snake.init(map);
+      // document.onkeydown = function(e) {
+      //     switch (e.keyCode) {
+      //       case 37:
+      //         snake.direction = "left";
+      //         break;
+      //       case 38:
+      //       snake.direction = "top";
+      //         break;
+      //       case 39:
+      //       snake.direction = "right";
+      //         break;
+      //       case 40:
+      //       snake.direction = "down";
+      //         break;
+      //     }
+      //   }
+      // setInterval(function() {
+      //   snake.init(map);
+      // }, 150);
+
+      // 获取按键值
+      // document.onkeydown = function(e){
+      //   console.log(e.keyCode);
+      // }
+      /* 按键值：
+    左==37
+    上==38
+    右==39
+    下==40 */
+      // documentm.appendChild
+    </script>
+  </body>
+</html>
