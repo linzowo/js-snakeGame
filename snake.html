@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>贪吃蛇</title>
+
+    <style>
+      .map {
+        width: 800px;
+        height: 600px;
+        background-color: #ccc;
+        position: relative;
+        top: 50px;
+        left: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 创建地图 -->
+    <div class="map"></div>
+
+    <!-- // 食物对象============================ -->
+    <script src="js/food.js"></script>
+    <!-- // 蛇对象=============================== -->
+    <script src="js/snake.js"></script>
+    <!-- // 游戏对象============================ -->
+    <script src="js/game.js"></script>
+    <script>
+      // game start
+      var map = document.querySelector(".map");
+      var gm = new Game(map);
+      gm.init()
+    </script>
+  </body>
+</html>
